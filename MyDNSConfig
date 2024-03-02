@@ -1,0 +1,101 @@
+/etc/bind 
+systemctl status named
+
+Conf files
+named.conf
+named.conf.local
+named.conf.options
+
+
+
+sudo nano named.conf.default-zones
+zone "zconlin.com" IN {
+   type master;
+   file "/etc/bind/zones/forward.zconlin.com";
+   allow-update { none; };
+};
+
+
+named.conf.options
+acl trusted {
+  192.168.86.6/24;
+  172.72.111.131;
+};
+
+options {
+   directory "var/cache/bind";
+   forwarders {
+      192.168.86.6;
+   };
+
+   dnssec-validation auto;
+   listen-on { 192.168.86.6; 172.72.111.131; };
+   recursion yes;
+   allow-query { localhost; trusted; };
+};
+
+***bind uses arpa notation, which is the ip address but written in reverse. For reverse lookup, you want to do only the network information (the bits within the subnet mask)
+
+zone "86.168.192.in-addr.arpa" IN {
+   type master;
+   file "/etc/bind/zones/reverse.zconlin.com";
+   allow-update { none; };
+};
+
+
+
+*** In order to add an external reverse lookup, you need to add another zone
+sudo nano named.conf.default-zones
+zone "72.172.in-addr.arpa" IN {
+   type master;
+   file "/etc/bind/zones/reverse.zconlin.com";
+   allow-update { none; };
+};
+
+
+sudo mkdir /etc/bind/zones
+   (***check to make sure it is drwxr-sr-x root bind)
+sudo cp /etc/bind/db.empty /etc/bind/zones/forward.zconlin.com
+sudo cp /etc/bind/db.empty /etc/bind/zones/reverse.zconlin.com
+
+
+
+sudo nano forward.zconlin.com
+@   IN   SOA   zconlin.com root (
+            2   ; Serial (***Change this number every time, also don't forget to restart the service to apply the changes)
+            604800   ; Refresh
+            86400   ; Retry
+            2419200   ; Expire
+            86400 )  ; Negative Cache TTL
+@   IN   NS   reaper
+reaper   IN A   192.168.86.6   ***subdomain record list, these are A records***
+www   IN A   192.168.86.6   ***IP of the web server***
+vault   IN A   172.72.111.131
+
+
+
+sudo nano reverse.zconlin.com
+@   IN   SOA   zconlin.com. root.zconlin.com. ( 
+***periods here are important for reverse
+            2   ; Serial (***Change this number every time)
+            604800   ; Refresh
+            86400   ; Retry
+            2419200   ; Expire
+            86400 )  ; Negative Cache TTL
+@   IN   NS   reaper
+6   IN PTR   www.zconlin.com.   ***The remaining octets of the IP (the host information) Again, periods are important in reverse
+6   IN PTR   reaper.zconlin.com.   ***The name of the DNS server itself
+131.111   IN PTR   vault.zconlin.com.
+
+
+
+
+sudo systemctl start named
+sudo nano /etc/resolv.conf ***If DNS server isn't set, this might be a router thing though
+   nameserver 192.168.86.6
+nslookup www.zconlin.com ***query the dns server
+nslookup 192.168.86.6
+*** For exteral devices, set the dns server to be the router through the resolv.conf above, then the router wil route dns requests to the dns server
+For debugging : 
+journalctl -r
+journalctl -xe
