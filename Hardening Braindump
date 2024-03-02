@@ -1,0 +1,37 @@
+/etc/shadow
+/etc/passwd
+/etc/group
+/etc/sudoers
+/etc/ssh/sshd_config
+user ~/.ssh/authorized_keys
+/etc/systemd
+crontabs
+   /etc/cron.d
+   /etc/cron.daily
+   /etc/cron.hourly
+   /etc/cron.monthly
+   /etc/cron.weekly
+   /etc/crontab
+   /var/spool/cron/crontabs/<username>
+Find reverse shells with netstat -tuln
+Password Loggers
+   /etc/pam.d
+   /bin/passwd file hash
+   Startup files and processes
+.bashrc (user and root)
+/etc/apt/preferences (package pins, remove them for the most part)
+/etc/apt/sources.list.d
+binaries (both root and /usr/bin) (compare the hash against a known good one with the command md5sum)
+
+File Permissions
+/etc/ssh/ - all root:root some will be 600 others will be 644
+/home/<username>/.ssh/authorized_keys – 600 
+<username>:<username>
+/etc/shadow 640 root:shadow – might also be root:root
+/etc/passwd 644 root:root
+/etc/group 644 root:root
+/etc/sudoers 440 root:root
+/var/www/<website> 755 for directories 644 for files (will depend on 
+the language) www-data:www-data
+/bin & /sbin & /usr/bin - typically will be root:root and 755 but there 
+are exceptions. The SUID bit is normally not set.
